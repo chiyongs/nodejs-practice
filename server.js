@@ -13,7 +13,7 @@ const templateList = (list) => {
   return content;
 };
 
-const templateHTML = (title, content, body) => {
+const templateHTML = (title, content, body, control) => {
   return `<!doctype html>
   <html>
   <head>
@@ -23,7 +23,7 @@ const templateHTML = (title, content, body) => {
   <body>
     <h1><a href="/">WEB</a></h1>
     ${content}
-    <a href="/create">Create</a>
+    ${control} 
     ${body}
   </body>
   </html>
@@ -37,29 +37,31 @@ const server = http.createServer(function (request, response) {
 
   if (PATHNAME === "/") {
     if (queryData.id === undefined) {
-      fs.readdir("./data", (err, list) => {
-        const content = templateList(list);
+      fs.readdir("./data", (err, fileList) => {
+        const list = templateList(fileList);
         const title = "Welcome";
         data = "Hello World";
         const template = templateHTML(
           title,
-          content,
+          list,
           `<h2>${title}</h2>
-          <p>${data}</p>`
+          <p>${data}</p>`,
+          `<a href="/create">Create</a>`
         );
         response.writeHead(200);
         response.end(template);
       });
     } else {
-      fs.readdir("./data", (err, list) => {
-        const content = templateList(list);
+      fs.readdir("./data", (err, fileList) => {
+        const list = templateList(fileList);
         fs.readFile(`data/${queryData.id}`, "utf8", (err, data) => {
           const title = queryData.id;
           const template = templateHTML(
             title,
-            content,
+            list,
             `<h2>${title}</h2>
-          <p>${data}</p>`
+          <p>${data}</p>`,
+            `<a href="/create">Create</a> <a href="/update?id=${title}">Update</a>`
           );
           response.writeHead(200);
           response.end(template);
@@ -67,35 +69,73 @@ const server = http.createServer(function (request, response) {
       });
     }
   } else if (PATHNAME === "/create") {
-    fs.readdir("./data", (err, list) => {
-      const content = templateList(list);
+    fs.readdir("./data", (err, fileList) => {
+      const list = templateList(fileList);
       const title = "Web - Create";
       const template = templateHTML(
         title,
-        content,
-        `<form action="http://localhost:3000/create_process" method=POST>
+        list,
+        `<form action="/create_process" method=POST>
         <p><input type = "text" placeholder="title" name="title"></p>
         <p><textarea name="content" placeholder="content"></textarea></p>
         <input type = "submit">
-        </form>`
+        </form>`,
+        ""
       );
       response.writeHead(200);
       response.end(template);
     });
   } else if (PATHNAME === "/create_process") {
-    if (request.method == "POST") {
-      let body = "";
-      request.on("data", (data) => {
-        body += data;
+    let body = "";
+    request.on("data", (data) => {
+      body += data;
+    });
+    request.on("end", (data) => {
+      const post = qs.parse(body);
+      const title = post.title;
+      const content = post.content;
+      fs.writeFile(`data/${title}`, content, "utf8", (err) => {
+        response.writeHead(302, { Location: `/?id=${title}` });
+        response.end();
       });
-      request.on("end", (data) => {
-        const post = qs.parse(body);
-        const title = post.title;
-        const content = post.content;
+    });
+  } else if (PATHNAME === "/update") {
+    fs.readdir("./data", (err, fileList) => {
+      const list = templateList(fileList);
+      fs.readFile(`data/${queryData.id}`, "utf8", (err, data) => {
+        const title = queryData.id;
+        const template = templateHTML(
+          title,
+          list,
+          `<form action="/update_process" method=POST>
+          <input type = "hidden" name="id" value="${title}"}>
+        <p><input type = "text" placeholder="title" name="title" value="${title}"></p>
+        <p><textarea name="content" placeholder="content">${data}</textarea></p>
+        <input type = "submit">
+        </form>`,
+          ""
+        );
+        response.writeHead(200);
+        response.end(template);
       });
-    }
-    response.writeHead(200);
-    response.end("success");
+    });
+  } else if (PATHNAME === "/update_process") {
+    let body = "";
+    request.on("data", (data) => {
+      body += data;
+    });
+    request.on("end", (data) => {
+      const post = qs.parse(body);
+      const title = post.title;
+      const id = post.id;
+      const content = post.content;
+      fs.rename(`data/${id}`, `data/${title}`, (err) => {
+        fs.writeFile(`data/${title}`, content, "utf8", (err) => {
+          response.writeHead(302, { Location: `/?id=${title}` });
+          response.end();
+        });
+      });
+    });
   } else {
     response.writeHead(404);
     response.end("Not Found!");
