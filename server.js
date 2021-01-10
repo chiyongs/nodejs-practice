@@ -1,36 +1,69 @@
 const http = require("http");
 const fs = require("fs");
 const url = require("url");
+
+const templateList = (list) => {
+  let i = 0;
+  let content = "<ul>";
+  for (i = 0; i < list.length; i++) {
+    content = content + `<li><a href="?id=${list[i]}">${list[i]}</a></li>`;
+  }
+  content = content + "</ul>";
+  return content;
+};
+
+const templateHTML = (title, content, body) => {
+  return `<!doctype html>
+  <html>
+  <head>
+    <title>WEB1 - ${title}</title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <h1><a href="/">WEB</a></h1>
+    ${content}
+    ${body}
+  </body>
+  </html>
+  `;
+};
+
 const server = http.createServer(function (request, response) {
   //   const request.url = request.url;
   const queryData = url.parse(request.url, true).query;
   const PATHNAME = url.parse(request.url, true).pathname;
-  const title = queryData.id;
 
   if (PATHNAME === "/") {
-    fs.readFile(`data/${queryData.id}`, "utf8", (err, data) => {
-      const template = `<!doctype html>
-            <html>
-            <head>
-              <title>WEB1 - ${title}</title>
-              <meta charset="utf-8">
-            </head>
-            <body>
-              <h1><a href="/">WEB</a></h1>
-              <ol>
-                <li><a href="?id=HTML">HTML</a></li>
-                <li><a href="?id=CSS">CSS</a></li>
-                <li><a href="?id=JavaScript">JavaScript</a></li>
-              </ol>
-              <h2>${title}</h2>
-              <p>${data}
-              </p>
-            </body>
-            </html>
-            `;
-      response.writeHead(200);
-      response.end(template);
-    });
+    if (queryData.id === undefined) {
+      fs.readdir("./data", (err, list) => {
+        const content = templateList(list);
+        const title = "Welcome";
+        data = "Hello World";
+        const template = templateHTML(
+          title,
+          content,
+          `<h2>${title}</h2>
+          <p>${data}</p>`
+        );
+        response.writeHead(200);
+        response.end(template);
+      });
+    } else {
+      fs.readdir("./data", (err, list) => {
+        const content = templateList(list);
+        fs.readFile(`data/${queryData.id}`, "utf8", (err, data) => {
+          const title = queryData.id;
+          const template = templateHTML(
+            title,
+            content,
+            `<h2>${title}</h2>
+          <p>${data}</p>`
+          );
+          response.writeHead(200);
+          response.end(template);
+        });
+      });
+    }
   } else {
     response.writeHead(404);
     response.end("Not Found!");
