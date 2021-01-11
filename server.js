@@ -2,46 +2,19 @@ const http = require("http");
 const fs = require("fs");
 const url = require("url");
 const qs = require("querystring");
-
-const templateList = (list) => {
-  let i = 0;
-  let content = "<ul>";
-  for (i = 0; i < list.length; i++) {
-    content = content + `<li><a href="?id=${list[i]}">${list[i]}</a></li>`;
-  }
-  content = content + "</ul>";
-  return content;
-};
-
-const templateHTML = (title, content, body, control) => {
-  return `<!doctype html>
-  <html>
-  <head>
-    <title>WEB1 - ${title}</title>
-    <meta charset="utf-8">
-  </head>
-  <body>
-    <h1><a href="/">WEB</a></h1>
-    ${content}
-    ${control} 
-    ${body}
-  </body>
-  </html>
-  `;
-};
+const template = require("./lib/template");
 
 const server = http.createServer(function (request, response) {
-  //   const request.url = request.url;
   const queryData = url.parse(request.url, true).query;
   const PATHNAME = url.parse(request.url, true).pathname;
 
   if (PATHNAME === "/") {
     if (queryData.id === undefined) {
       fs.readdir("./data", (err, fileList) => {
-        const list = templateList(fileList);
+        const list = template.List(fileList);
         const title = "Welcome";
         data = "Hello World";
-        const template = templateHTML(
+        const html = template.HTML(
           title,
           list,
           `<h2>${title}</h2>
@@ -49,14 +22,14 @@ const server = http.createServer(function (request, response) {
           `<a href="/create">Create</a>`
         );
         response.writeHead(200);
-        response.end(template);
+        response.end(html);
       });
     } else {
       fs.readdir("./data", (err, fileList) => {
-        const list = templateList(fileList);
+        const list = template.List(fileList);
         fs.readFile(`data/${queryData.id}`, "utf8", (err, data) => {
           const title = queryData.id;
-          const template = templateHTML(
+          const html = template.HTML(
             title,
             list,
             `<h2>${title}</h2>
@@ -64,15 +37,15 @@ const server = http.createServer(function (request, response) {
             `<a href="/create">Create</a> <a href="/update?id=${title}">Update</a> <form action="delete_process" method = "POST" ><input type="hidden" name="id" value="${title}"><input type="submit" value="delete"></form>`
           );
           response.writeHead(200);
-          response.end(template);
+          response.end(html);
         });
       });
     }
   } else if (PATHNAME === "/create") {
     fs.readdir("./data", (err, fileList) => {
-      const list = templateList(fileList);
+      const list = template.List(fileList);
       const title = "Web - Create";
-      const template = templateHTML(
+      const html = template.HTML(
         title,
         list,
         `<form action="/create_process" method=POST>
@@ -83,7 +56,7 @@ const server = http.createServer(function (request, response) {
         ""
       );
       response.writeHead(200);
-      response.end(template);
+      response.end(html);
     });
   } else if (PATHNAME === "/create_process") {
     let body = "";
@@ -101,10 +74,10 @@ const server = http.createServer(function (request, response) {
     });
   } else if (PATHNAME === "/update") {
     fs.readdir("./data", (err, fileList) => {
-      const list = templateList(fileList);
+      const list = template.List(fileList);
       fs.readFile(`data/${queryData.id}`, "utf8", (err, data) => {
         const title = queryData.id;
-        const template = templateHTML(
+        const html = template.HTML(
           title,
           list,
           `<form action="/update_process" method=POST>
@@ -116,7 +89,7 @@ const server = http.createServer(function (request, response) {
           ""
         );
         response.writeHead(200);
-        response.end(template);
+        response.end(html);
       });
     });
   } else if (PATHNAME === "/update_process") {
