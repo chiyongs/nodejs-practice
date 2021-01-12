@@ -3,6 +3,8 @@ const fs = require("fs");
 const url = require("url");
 const qs = require("querystring");
 const template = require("./lib/template");
+const path = require("path");
+const sanitizeHtml = require("sanitize-html");
 
 const server = http.createServer(function (request, response) {
   const queryData = url.parse(request.url, true).query;
@@ -11,9 +13,9 @@ const server = http.createServer(function (request, response) {
   if (PATHNAME === "/") {
     if (queryData.id === undefined) {
       fs.readdir("./data", (err, fileList) => {
-        const list = template.List(fileList);
         const title = "Welcome";
         data = "Hello World";
+        const list = template.List(fileList);
         const html = template.HTML(
           title,
           list,
@@ -26,15 +28,18 @@ const server = http.createServer(function (request, response) {
       });
     } else {
       fs.readdir("./data", (err, fileList) => {
-        const list = template.List(fileList);
-        fs.readFile(`data/${queryData.id}`, "utf8", (err, data) => {
+        const filteredID = path.parse(queryData.id).base;
+        fs.readFile(`data/${filteredID}`, "utf8", (err, data) => {
           const title = queryData.id;
+          const sanitizedTitle = sanitizeHtml(title);
+          const sanitizedData = sanitizeHtml(data);
+          const list = template.List(fileList);
           const html = template.HTML(
-            title,
+            sanitizedTitle,
             list,
-            `<h2>${title}</h2>
-          <p>${data}</p>`,
-            `<a href="/create">Create</a> <a href="/update?id=${title}">Update</a> <form action="delete_process" method = "POST" ><input type="hidden" name="id" value="${title}"><input type="submit" value="delete"></form>`
+            `<h2>${sanitizedTitle}</h2>
+          <p>${sanitizedData}</p>`,
+            `<a href="/create">Create</a> <a href="/update?id=${sanitizedTitle}">Update</a> <form action="delete_process" method = "POST" ><input type="hidden" name="id" value="${sanitizedTitle}"><input type="submit" value="delete"></form>`
           );
           response.writeHead(200);
           response.end(html);
@@ -43,8 +48,8 @@ const server = http.createServer(function (request, response) {
     }
   } else if (PATHNAME === "/create") {
     fs.readdir("./data", (err, fileList) => {
-      const list = template.List(fileList);
       const title = "Web - Create";
+      const list = template.List(fileList);
       const html = template.HTML(
         title,
         list,
@@ -74,9 +79,10 @@ const server = http.createServer(function (request, response) {
     });
   } else if (PATHNAME === "/update") {
     fs.readdir("./data", (err, fileList) => {
-      const list = template.List(fileList);
-      fs.readFile(`data/${queryData.id}`, "utf8", (err, data) => {
+      const filteredID = path.parse(queryData.id).base;
+      fs.readFile(`data/${filteredID}`, "utf8", (err, data) => {
         const title = queryData.id;
+        const list = template.List(fileList);
         const html = template.HTML(
           title,
           list,
@@ -117,7 +123,8 @@ const server = http.createServer(function (request, response) {
     request.on("end", (data) => {
       const post = qs.parse(body);
       const id = post.id;
-      fs.unlink(`data/${id}`, (err) => {
+      const filteredID = path.parse(id).base;
+      fs.unlink(`data/${filteredID}`, (err) => {
         response.writeHead(302, { Location: `/` });
         response.end();
       });

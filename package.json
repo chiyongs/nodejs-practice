@@ -1,0 +1,11 @@
+{
+  "name": "nodejs-practice",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/chiyongs/nodejs-practice.git",
+  "author": "chiyongs <tlscldyd@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "sanitize-html": "^2.3.0"
+  }
+}
