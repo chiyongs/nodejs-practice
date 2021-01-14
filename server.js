@@ -1,9 +1,47 @@
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const sanitizeHtml = require("sanitize-html");
+const template = require("./lib/template");
 const app = express();
 const port = 3000;
 
+//route, routing
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  fs.readdir("./data", (err, fileList) => {
+    const title = "Welcome";
+    const data = "Hello World";
+    const list = template.List(fileList);
+    const html = template.HTML(
+      title,
+      list,
+      `<h2>${title}</h2>
+      <p>${data}</p>`,
+      `<a href="/create">Create</a>`
+    );
+    res.writeHead(200);
+    res.end(html);
+  });
+});
+
+app.get("/page/:pageId", (req, res) => {
+  fs.readdir("./data", (err, fileList) => {
+    const filteredID = path.parse(req.params.pageId).base;
+    fs.readFile(`data/${filteredID}`, "utf8", (err, data) => {
+      const title = req.params.pageId;
+      const sanitizedTitle = sanitizeHtml(title);
+      const sanitizedData = sanitizeHtml(data);
+      const list = template.List(fileList);
+      const html = template.HTML(
+        sanitizedTitle,
+        list,
+        `<h2>${sanitizedTitle}</h2>
+      <p>${sanitizedData}</p>`,
+        `<a href="/create">Create</a> <a href="/update?id=${sanitizedTitle}">Update</a> <form action="delete_process" method = "POST" ><input type="hidden" name="id" value="${sanitizedTitle}"><input type="submit" value="delete"></form>`
+      );
+      res.send(html);
+    });
+  });
 });
 
 app.listen(port, () => {
