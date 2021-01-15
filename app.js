@@ -3,12 +3,13 @@ const fs = require("fs");
 const path = require("path");
 const sanitizeHtml = require("sanitize-html");
 const template = require("./lib/template");
-const qs = require("querystring");
 const bodyParser = require("body-parser");
+const compression = require("compression");
 const app = express();
 const port = 3000;
 
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(compression());
 
 //route, routing
 app.get("/", (req, res) => {
@@ -30,6 +31,12 @@ app.get("/", (req, res) => {
 
 app.get("/page/:pageId", (req, res) => {
   fs.readdir("./data", (err, fileList) => {
+    console.log(req);
+    if (req.list) {
+      console.log("yes");
+    } else {
+      console.log("doesnt");
+    }
     const filteredID = path.parse(req.params.pageId).base;
     fs.readFile(`data/${filteredID}`, "utf8", (err, data) => {
       const title = req.params.pageId;
