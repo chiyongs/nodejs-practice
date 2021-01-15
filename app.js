@@ -123,39 +123,11 @@ app.post("/delete_process", (req, res) => {
   });
 });
 
+// 위의 함수들을 다 실행한 후에 라우팅에 맞는 함수가 없다는 것으로 판단되어서 매칭되는 것이 없으므로 404 error
+app.use(function (req, res, next) {
+  res.status(404).send("Sorry cant find that!");
+});
+
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
-
-/*const http = require("http");
-const url = require("url");
-
-const server = http.createServer(function (request, response) {
-  const queryData = url.parse(request.url, true).query;
-  const PATHNAME = url.parse(request.url, true).pathname;
-    
-  } else if (PATHNAME === "/update") {
-    
-  } else if (PATHNAME === "/update_process") {
-    
-  } else if (PATHNAME === "/delete_process") {
-    let body = "";
-    request.on("data", (data) => {
-      body += data;
-    });
-    request.on("end", (data) => {
-      const post = qs.parse(body);
-      const id = post.id;
-      const filteredID = path.parse(id).base;
-      fs.unlink(`data/${filteredID}`, (err) => {
-        response.writeHead(302, { Location: `/` });
-        response.end();
-      });
-    });
-  } else {
-    response.writeHead(404);
-    response.end("Not Found!");
-  }
-});
-server.listen(3000);
-*/
