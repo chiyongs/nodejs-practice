@@ -58,9 +58,7 @@ router.post("/update_process", (req, res) => {
   const title = post.title;
   const content = post.content;
   fs.rename(`data/${id}`, `data/${title}`, (err) => {
-    fs.writeFile(`data/${title}`, content, "utf8", (err) => {
-      res.redirect(`/page/${title}`);
-    });
+    fs.writeFile(`data/${title}`, content, "utf8", (err) => {});
   });
 });
 
